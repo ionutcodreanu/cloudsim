@@ -31,6 +31,10 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.UniformDistr;
+import org.cloudbus.cloudsim.failure.DatacenterBrokerWithFailure;
+import org.cloudbus.cloudsim.failure.DatacenterWithFailure;
+import org.cloudbus.cloudsim.failure.FailureGenerator;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -80,7 +84,7 @@ public class CloudSimExample6 {
 		LinkedList<Cloudlet> list = new LinkedList<Cloudlet>();
 
 		//cloudlet parameters
-		long length = 1000;
+		long length = 100000;
 		long fileSize = 300;
 		long outputSize = 300;
 		int pesNumber = 1;
@@ -89,6 +93,11 @@ public class CloudSimExample6 {
 		Cloudlet[] cloudlet = new Cloudlet[cloudlets];
 
 		for(int i=0;i<cloudlets;i++){
+			if (i % 2 == 0) {
+				length = 100000;
+			} else {
+				length = 1000;
+			}
 			cloudlet[i] = new Cloudlet(i, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
 			// setting the owner of these Cloudlets
 			cloudlet[i].setUserId(userId);
@@ -120,18 +129,18 @@ public class CloudSimExample6 {
 			// Second step: Create Datacenters
 			//Datacenters are the resource providers in CloudSim. We need at list one of them to run a CloudSim simulation
 			@SuppressWarnings("unused")
-			Datacenter datacenter0 = createDatacenter("Datacenter_0");
+			Datacenter datacenter0 = createDatacenter("Datacenter_0", 30);
 			@SuppressWarnings("unused")
-			Datacenter datacenter1 = createDatacenter("Datacenter_1");
+//			Datacenter datacenter1 = createDatacenter("Datacenter_1", 50);
 
 			//Third step: Create Broker
 			DatacenterBroker broker = createBroker();
 			int brokerId = broker.getId();
 
 			//Fourth step: Create VMs and Cloudlets and send them to broker
-			vmlist = createVM(brokerId,20); //creating 20 vms
-			cloudletList = createCloudlet(brokerId,40); // creating 40 cloudlets
-
+			vmlist = createVM(brokerId,50); //creating 20 vms
+			cloudletList = createCloudlet(brokerId,2000); // creating 40 cloudlets
+			FailureGenerator failure = new FailureGenerator("failure_injector", new UniformDistr(0,1));
 			broker.submitVmList(vmlist);
 			broker.submitCloudletList(cloudletList);
 
@@ -154,7 +163,7 @@ public class CloudSimExample6 {
 		}
 	}
 
-	private static Datacenter createDatacenter(String name){
+	private static Datacenter createDatacenter(String name, int noOfHosts){
 
 		// Here are the steps needed to create a PowerDatacenter:
 		// 1. We need to create a list to store one or more
@@ -166,7 +175,7 @@ public class CloudSimExample6 {
 		//    a Machine.
 		List<Pe> peList1 = new ArrayList<Pe>();
 
-		int mips = 1000;
+		int mips = 3600;
 
 		// 3. Create PEs and add these into the list.
 		//for a quad-core machine, a list of 4 PEs is required:
@@ -174,68 +183,29 @@ public class CloudSimExample6 {
 		peList1.add(new Pe(1, new PeProvisionerSimple(mips)));
 		peList1.add(new Pe(2, new PeProvisionerSimple(mips)));
 		peList1.add(new Pe(3, new PeProvisionerSimple(mips)));
-
-		//Another list, for a dual-core machine
-		List<Pe> peList2 = new ArrayList<Pe>();
-
-		peList2.add(new Pe(0, new PeProvisionerSimple(mips)));
-		peList2.add(new Pe(1, new PeProvisionerSimple(mips)));
+		peList1.add(new Pe(4, new PeProvisionerSimple(mips)));
+		peList1.add(new Pe(5, new PeProvisionerSimple(mips)));
+		peList1.add(new Pe(6, new PeProvisionerSimple(mips)));
+		peList1.add(new Pe(7, new PeProvisionerSimple(mips)));
 
 		//4. Create Hosts with its id and list of PEs and add them to the list of machines
 		int hostId=0;
-		int ram = 2048; //host memory (MB)
+		int ram = 8192; //host memory (MB)
 		long storage = 1000000; //host storage
 		int bw = 10000;
 
-		hostList.add(
-    			new Host(
-    				hostId,
-    				new RamProvisionerSimple(ram),
-    				new BwProvisionerSimple(bw),
-    				storage,
-    				peList1,
-    				new VmSchedulerTimeShared(peList1)
-    			)
-    		); // This is our first machine
-
-		hostId++;
-
-		hostList.add(
-    			new Host(
-    				hostId,
-    				new RamProvisionerSimple(ram),
-    				new BwProvisionerSimple(bw),
-    				storage,
-    				peList2,
-    				new VmSchedulerTimeShared(peList2)
-    			)
-    		); // Second machine
-
-
-		//To create a host with a space-shared allocation policy for PEs to VMs:
-		//hostList.add(
-    	//		new Host(
-    	//			hostId,
-    	//			new CpuProvisionerSimple(peList1),
-    	//			new RamProvisionerSimple(ram),
-    	//			new BwProvisionerSimple(bw),
-    	//			storage,
-    	//			new VmSchedulerSpaceShared(peList1)
-    	//		)
-    	//	);
-
-		//To create a host with a oportunistic space-shared allocation policy for PEs to VMs:
-		//hostList.add(
-    	//		new Host(
-    	//			hostId,
-    	//			new CpuProvisionerSimple(peList1),
-    	//			new RamProvisionerSimple(ram),
-    	//			new BwProvisionerSimple(bw),
-    	//			storage,
-    	//			new VmSchedulerOportunisticSpaceShared(peList1)
-    	//		)
-    	//	);
-
+		for(int i=0;i<noOfHosts;i++) {
+			hostList.add(
+					new Host(
+							hostId,
+							new RamProvisionerSimple(ram),
+							new BwProvisionerSimple(bw),
+							storage,
+							peList1,
+							new VmSchedulerTimeShared(peList1)
+					)
+			); // This is our first machine
+		}
 
 		// 5. Create a DatacenterCharacteristics object that stores the
 		//    properties of a data center: architecture, OS, list of
@@ -258,7 +228,7 @@ public class CloudSimExample6 {
 		// 6. Finally, we need to create a PowerDatacenter object.
 		Datacenter datacenter = null;
 		try {
-			datacenter = new Datacenter(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
+			datacenter = new DatacenterWithFailure(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -272,7 +242,7 @@ public class CloudSimExample6 {
 
 		DatacenterBroker broker = null;
 		try {
-			broker = new DatacenterBroker("Broker");
+			broker = new DatacenterBrokerWithFailure("Broker");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
