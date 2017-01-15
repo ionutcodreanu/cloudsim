@@ -30,6 +30,9 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.UniformDistr;
+import org.cloudbus.cloudsim.failure.DatacenterWithFailure;
+import org.cloudbus.cloudsim.failure.FailureGenerator;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -132,6 +135,8 @@ public class CloudSimExample1 {
 			// submit cloudlet list to the broker
 			broker.submitCloudletList(cloudletList);
 
+			FailureGenerator failure = new FailureGenerator("failure_injector");
+
 			// Sixth step: Starts the simulation
 			CloudSim.startSimulation();
 
@@ -212,7 +217,7 @@ public class CloudSimExample1 {
 		// 6. Finally, we need to create a PowerDatacenter object.
 		Datacenter datacenter = null;
 		try {
-			datacenter = new Datacenter(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
+			datacenter = new DatacenterWithFailure(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

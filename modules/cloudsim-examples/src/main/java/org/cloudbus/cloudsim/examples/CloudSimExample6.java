@@ -16,6 +16,7 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
+import java.util.Random;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
 import org.cloudbus.cloudsim.Datacenter;
@@ -31,6 +32,8 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
+import org.cloudbus.cloudsim.distributions.GammaDistr;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 import org.cloudbus.cloudsim.failure.DatacenterBrokerWithFailure;
 import org.cloudbus.cloudsim.failure.DatacenterWithFailure;
@@ -140,7 +143,9 @@ public class CloudSimExample6 {
 			//Fourth step: Create VMs and Cloudlets and send them to broker
 			vmlist = createVM(brokerId,50); //creating 20 vms
 			cloudletList = createCloudlet(brokerId,2000); // creating 40 cloudlets
-			FailureGenerator failure = new FailureGenerator("failure_injector", new UniformDistr(0,1));
+			ContinuousDistribution distr = new GammaDistr(new Random((long) 1), 2, 1.1);
+			FailureGenerator failure = new FailureGenerator("failure_injector");
+//			FailureGenerator failure = new FailureGenerator("failure_injector", distr);
 			broker.submitVmList(vmlist);
 			broker.submitCloudletList(cloudletList);
 

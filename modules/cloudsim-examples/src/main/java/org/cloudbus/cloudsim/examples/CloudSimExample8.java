@@ -130,8 +130,8 @@ public class CloudSimExample8 {
 			int brokerId = broker.getId();
 
 			//Fourth step: Create VMs and Cloudlets and send them to broker
-			vmList = createVM(brokerId, 5, 0); //creating 5 vms
-			cloudletList = createCloudlet(brokerId, 10, 0); // creating 10 cloudlets
+			vmList = createVM(brokerId, 100, 0); //creating 5 vms
+			cloudletList = createCloudlet(brokerId, 500, 0); // creating 10 cloudlets
 
 			broker.submitVmList(vmList);
 			broker.submitCloudletList(cloudletList);
@@ -275,12 +275,14 @@ public class CloudSimExample8 {
 			cloudlet = list.get(i);
 			Log.print(indent + cloudlet.getCloudletId() + indent + indent);
 
-			if (cloudlet.getCloudletStatus() == Cloudlet.SUCCESS){
+			if (cloudlet.getStatus() == Cloudlet.SUCCESS){
 				Log.print("SUCCESS");
 
 				Log.printLine( indent + indent + cloudlet.getResourceId() + indent + indent + indent + cloudlet.getVmId() +
 						indent + indent + indent + dft.format(cloudlet.getActualCPUTime()) +
 						indent + indent + dft.format(cloudlet.getExecStartTime())+ indent + indent + indent + dft.format(cloudlet.getFinishTime()));
+			} else {
+				Log.print("Not SUCCESS");
 			}
 		}
 
@@ -309,6 +311,7 @@ public class CloudSimExample8 {
 
 				broker.submitVmList(getVmList());
 				broker.submitCloudletList(getCloudletList());
+				List<SimEntity> entities = CloudSim.getEntityList();
 
 				CloudSim.resumeSimulation();
 
@@ -322,7 +325,7 @@ public class CloudSimExample8 {
 
 		@Override
 		public void startEntity() {
-			Log.printLine(super.getName()+" is starting...");
+			Log.printLine(super.getName()+" is startingggggg...");
 			schedule(getId(), 200, CREATE_BROKER);
 		}
 
