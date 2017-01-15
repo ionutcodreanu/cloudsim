@@ -276,6 +276,7 @@ public class CloudSimTags {
 	public static final int FAILURE_GENERATOR_HOST_FAILURE = BASE + 50;
 	public static final int FAILURE_GENERATOR_SEND_HOST_FAILURE = BASE + 51;
 	public static final int HOST_DESTROY = BASE + 52;
+	public static final int VM_DESTROY_FAIL_CLOUDLETS = BASE + 53;
 
 	/** Private Constructor. */
 	private CloudSimTags() {

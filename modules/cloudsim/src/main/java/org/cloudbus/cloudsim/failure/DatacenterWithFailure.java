@@ -25,19 +25,32 @@ public class DatacenterWithFailure extends Datacenter {
   }
 
   @Override
-  protected void processOtherEvent(SimEvent ev) {
-    switch (ev.getTag()) {
+  protected void processOtherEvent(SimEvent event) {
+    switch (event.getTag()) {
       case CloudSimTags.FAILURE_GENERATOR_SEND_HOST_FAILURE:
         processRemoveHostFromList();
         break;
       case CloudSimTags.HOST_DESTROY:
         List<Host> hosts = this.getHostList();
-        Host host = (Host) ev.getData();
+        Host host = (Host) event.getData();
         host.setFailed(true);
         this.addFailedHost(host);
-//        hosts.remove(host);
-        Log.printConcatLine("Host removed");
         break;
+      case CloudSimTags.VM_DESTROY_FAIL_CLOUDLETS:
+        Vm vm = (Vm) event.getData();
+        List<ResCloudlet> cloudletsInExecution = vm.getCloudletScheduler().getCloudletExecList();
+        List<ResCloudlet> resumedCloudlets = vm.getCloudletScheduler().getCloudletPausedList();
+        List<ResCloudlet> waitingCloudlets = vm.getCloudletScheduler().getCloudletWaitingList();
+        cancelCloudlets(cloudletsInExecution);
+        cancelCloudlets(resumedCloudlets);
+        cancelCloudlets(waitingCloudlets);
+        break;
+    }
+  }
+
+  private void cancelCloudlets(List<ResCloudlet> cloudletsList) {
+    for (ResCloudlet cloudlet : cloudletsList) {
+      cloudlet.setCloudletStatus(Cloudlet.FAILED);
     }
   }
 
@@ -51,6 +64,7 @@ public class DatacenterWithFailure extends Datacenter {
         return;
       }
       for (Vm vm : failedHost.getVmList()) {
+        sendNow(this.getId(), CloudSimTags.VM_DESTROY_FAIL_CLOUDLETS, vm);
         sendNow(this.getId(), CloudSimTags.VM_DESTROY, vm);
       }
       sendNow(this.getId(), CloudSimTags.HOST_DESTROY, failedHost);

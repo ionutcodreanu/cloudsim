@@ -34,13 +34,13 @@ import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.GammaDistr;
-import org.cloudbus.cloudsim.distributions.UniformDistr;
 import org.cloudbus.cloudsim.failure.DatacenterBrokerWithFailure;
 import org.cloudbus.cloudsim.failure.DatacenterWithFailure;
 import org.cloudbus.cloudsim.failure.FailureGenerator;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import org.cloudbus.cloudsim.util.CloudletTextPrinterHelper;
 
 /**
  * An example showing how to create
@@ -122,7 +122,7 @@ public class CloudSimExample9 {
    * Creates main() to run this example
    */
   public static void main(String[] args) {
-    Log.printLine("Starting CloudSimExample6...");
+    Log.printLine("Starting CloudSimExample9...");
 
     try {
       // First step: Initialize the CloudSim package. It should be called
@@ -159,10 +159,13 @@ public class CloudSimExample9 {
 
       // Final step: Print results when simulation is over
       List<Cloudlet> newList = broker.getCloudletReceivedList();
+      List<Cloudlet> submitedCloudletList = broker.getCloudletSubmittedList();
 
       CloudSim.stopSimulation();
 
-      printCloudletList(newList);
+      CloudletTextPrinterHelper textPrinterSubmittedList = new CloudletTextPrinterHelper(submitedCloudletList, "Cloudlet Submited List");
+      Log.printLine(textPrinterSubmittedList.getTable());
+
       List<Host> hostList = datacenter0.getHostList();
       printHosts(hostList);
 
@@ -306,16 +309,14 @@ public class CloudSimExample9 {
       cloudlet = list.get(i);
       Log.print(indent + cloudlet.getCloudletId() + indent + indent);
 
-      if (cloudlet.getCloudletStatus() == Cloudlet.SUCCESS) {
-        Log.print("SUCCESS");
-
-        Log.printLine(
-            indent + indent + cloudlet.getResourceId() + indent + indent + indent + cloudlet
-                .getVmId() +
-                indent + indent + indent + dft.format(cloudlet.getActualCPUTime()) +
-                indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent + indent
-                + dft.format(cloudlet.getFinishTime()));
-      }
+      String cloudletStatus = Cloudlet.getStatusString(cloudlet.getStatus());
+      Log.print(cloudletStatus);
+      Log.printLine(
+          indent + indent + cloudlet.getResourceId() + indent + indent + indent + cloudlet
+              .getVmId() +
+              indent + indent + indent + dft.format(cloudlet.getActualCPUTime()) +
+              indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent + indent
+              + dft.format(cloudlet.getFinishTime()));
     }
 
   }
