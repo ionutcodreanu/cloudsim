@@ -3,49 +3,63 @@ package org.cloudbus.cloudsim.failure;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
-import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
-import org.cloudbus.cloudsim.distributions.UniformDistr;
 
-import java.util.LinkedList;
 import java.util.List;
-import org.cloudbus.cloudsim.lists.VmList;
 
 /**
  * Created by ydoc on 11/28/2016.
  */
 public class DatacenterWithFailure extends Datacenter {
 
-  private List<Host> hostsThatFailed;
 
   public DatacenterWithFailure(String name, DatacenterCharacteristics characteristics,
       VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval)
       throws Exception {
     super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
-    this.hostsThatFailed = new LinkedList<Host>();
   }
 
   @Override
   protected void processOtherEvent(SimEvent event) {
     switch (event.getTag()) {
-      case CloudSimTags.FAILURE_GENERATOR_SEND_HOST_FAILURE:
-        processRemoveHostFromList();
+      case CloudSimTags.FAILURE_GENERATOR_DATACENTER_HOST_FAILURE:
+        Host failedHost = (Host) event.getData();
+        failHost(failedHost);
         break;
-      case CloudSimTags.HOST_DESTROY:
-        List<Host> hosts = this.getHostList();
-        Host host = (Host) event.getData();
-        host.setFailed(true);
-        this.addFailedHost(host);
+      case CloudSimTags.FAILURE_GENERATOR_DATACENTER_VM_FAILURE:
+        Vm vmFailure = (Vm) event.getData();
+        failCloudlets(vmFailure);
+        sendNow(this.getId(), CloudSimTags.VM_DESTROY, vmFailure);
         break;
       case CloudSimTags.VM_DESTROY_FAIL_CLOUDLETS:
         Vm vm = (Vm) event.getData();
-        List<ResCloudlet> cloudletsInExecution = vm.getCloudletScheduler().getCloudletExecList();
-        List<ResCloudlet> resumedCloudlets = vm.getCloudletScheduler().getCloudletPausedList();
-        List<ResCloudlet> waitingCloudlets = vm.getCloudletScheduler().getCloudletWaitingList();
-        cancelCloudlets(cloudletsInExecution);
-        cancelCloudlets(resumedCloudlets);
-        cancelCloudlets(waitingCloudlets);
+        failCloudlets(vm);
+        break;
+      case CloudSimTags.FAILURE_GENERATOR_DATACENTER_CLOUDLET_FAILURE:
+        Cloudlet cloudlet = (Cloudlet) event.getData();
+        Vm vm1 = getVmForCloudlet(cloudlet);
+        CloudletScheduler cloudletScheduler = vm1.getCloudletScheduler();
+        int cloudletId = cloudlet.getCloudletId();
+        cloudletScheduler.cloudletCancel(cloudletId);
         break;
     }
+  }
+
+  private Vm getVmForCloudlet(Cloudlet cloudlet) {
+    for (Vm vm : this.getVmList()) {
+      if (vm.getId() == cloudlet.getVmId()) {
+        return vm;
+      }
+    }
+    return this.getVmList().get(0);
+  }
+
+  private void failCloudlets(Vm vm) {
+    List<ResCloudlet> cloudletsInExecution = vm.getCloudletScheduler().getCloudletExecList();
+    List<ResCloudlet> resumedCloudlets = vm.getCloudletScheduler().getCloudletPausedList();
+    List<ResCloudlet> waitingCloudlets = vm.getCloudletScheduler().getCloudletWaitingList();
+    cancelCloudlets(cloudletsInExecution);
+    cancelCloudlets(resumedCloudlets);
+    cancelCloudlets(waitingCloudlets);
   }
 
   private void cancelCloudlets(List<ResCloudlet> cloudletsList) {
@@ -54,35 +68,11 @@ public class DatacenterWithFailure extends Datacenter {
     }
   }
 
-  private void processRemoveHostFromList() {
-    List<Host> hosts = this.getHostList();
-    int noOfHosts = hosts.size();
-    if (noOfHosts > 0) {
-      Host failedHost = this.getFirstAvailableHost(hosts);
-      if (failedHost == null) {
-        Log.printConcatLine("No host found for removal");
-        return;
-      }
-      for (Vm vm : failedHost.getVmList()) {
-        sendNow(this.getId(), CloudSimTags.VM_DESTROY_FAIL_CLOUDLETS, vm);
-        sendNow(this.getId(), CloudSimTags.VM_DESTROY, vm);
-      }
-      sendNow(this.getId(), CloudSimTags.HOST_DESTROY, failedHost);
-    } else {
-      Log.printConcatLine("No host found for removal");
+  private void failHost(Host failedHost) {
+    for (Vm vm : failedHost.getVmList()) {
+      sendNow(this.getId(), CloudSimTags.VM_DESTROY_FAIL_CLOUDLETS, vm);
+      sendNow(this.getId(), CloudSimTags.VM_DESTROY, vm);
     }
-  }
-
-  private Host getFirstAvailableHost(List<Host> hosts) {
-    for (Host host : hosts) {
-      if (!host.isFailed()) {
-        return host;
-      }
-    }
-    return null;
-  }
-
-  private void addFailedHost(Host failedHost) {
-    this.hostsThatFailed.add(failedHost);
+    failedHost.setFailed(true);
   }
 }

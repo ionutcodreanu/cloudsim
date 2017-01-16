@@ -36,6 +36,8 @@ public class FailureGenerator extends SimEntity {
     }
     schedule(this.getId(), (double) 50, CloudSimTags.FAILURE_GENERATOR_INTERNAL_EVENT);
     schedule(this.getId(), (double) 100, CloudSimTags.FAILURE_GENERATOR_INTERNAL_EVENT);
+    schedule(this.dataCenterBrokerEntityId, (double) 70, CloudSimTags.FAILURE_GENERATOR_CLOUDLET_FAILURE);
+    schedule(this.dataCenterBrokerEntityId, (double) 120, CloudSimTags.FAILURE_GENERATOR_VM_FAILURE);
     schedule(this.getId(), (double) 250, CloudSimTags.FAILURE_GENERATOR_INTERNAL_EVENT);
     schedule(this.getId(), (double) 300, CloudSimTags.FAILURE_GENERATOR_INTERNAL_EVENT);
   }
